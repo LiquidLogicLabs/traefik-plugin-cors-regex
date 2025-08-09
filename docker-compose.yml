@@ -12,7 +12,7 @@ services:
     networks:
       - traefik-network
 
-  # Traefik with our plugin
+  # Traefik with our plugin (built locally for testing)
   traefik:
     build:
       context: .

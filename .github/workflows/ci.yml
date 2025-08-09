@@ -11,7 +11,6 @@ on:
 env:
   GO_VERSION: '1.21'
   PLUGIN_NAME: cors-regex
-  DOCKER_IMAGE: liquidlogiclabs/traefik-plugin-cors-regex
 
 jobs:
   test:
@@ -108,49 +107,10 @@ jobs:
         path: build/
         retention-days: 30
 
-  docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Get version
-      id: version
-      run: |
-        if [ -f VERSION ]; then
-          echo "version=$(cat VERSION | tr -d '\n')" >> $GITHUB_OUTPUT
-        else
-          echo "version=0.1.0" >> $GITHUB_OUTPUT
-        fi
-        
-    - name: Log in to Docker Hub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: |
-          ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
-          ${{ env.DOCKER_IMAGE }}:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build, docker]
+    needs: [build]
     if: github.event_name == 'release' && github.event.action == 'published'
     
     steps:
