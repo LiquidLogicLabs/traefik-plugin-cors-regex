@@ -1,0 +1,24 @@
+---
+alwaysApply: true
+---
+
+# General
+- Follow all best practices for go
+- Follow all best practices for writting a traefik plugin (https://plugins.traefik.io/create)
+- Use the demo plugin as a model (https://github.com/traefik/plugindemo)
+- Make sure to support the latest version of traefik
+- For any code that is written create or update unit tests and a test harness if necessary
+- Create/Update a README,md file regarding use and configuration
+- Create/Update a README.dev.md file for any development related information
+
+# Build/Package
+- Create a packaging and plushing script that includes version handling and increments
+- Use docker for local build and package - use multi stage if that makes it cleaner
+
+# Deployment
+- Create a build pipeline that supports Github actions and can also be run locally with act
+
+# Folder structure
+- src - all source code
+- scripts - all scripts
+- docker - any dockerfile, compose file, and env file
