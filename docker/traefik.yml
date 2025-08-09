@@ -13,7 +13,7 @@ entryPoints:
   web:
     address: ":80"
   dashboard:
-    address: ":8080"
+    address: ":9000"
 
 # Providers
 providers:

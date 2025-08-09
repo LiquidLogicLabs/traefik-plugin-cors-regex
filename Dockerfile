@@ -43,11 +43,11 @@ COPY docker/test.sh /usr/local/bin/test.sh
 RUN chmod +x /usr/local/bin/test.sh
 
 # Expose Traefik ports
-EXPOSE 80 8080
+EXPOSE 80 9000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/ping || exit 1
+  CMD curl -f http://localhost:9000/ping || exit 1
 
 # Default command runs Traefik with our plugin
 CMD ["traefik", "--configfile=/etc/traefik/traefik.yml"]
