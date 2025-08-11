@@ -1,141 +1,155 @@
-.PHONY: help test build docker clean release all
+.PHONY: help build clean vendor clean-vendor
+.PHONY: test test-unit test-coverage test-local test-catalog test-all 
+.PHONY: local-build local-test local-clean catalog-test catalog-clean clean-all
+.PHONY: version version-patch version-minor version-major release release-dry-run
 
 # Variables
 PLUGIN_NAME := cors-regex
 VERSION := $(shell cat VERSION 2>/dev/null || echo "0.1.0")
-DOCKER_IMAGE := liquidlogiclabs/traefik-plugin-cors-regex
 
 # Default target
 help: ## Show this help message
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo "🚀 CORS Regex Plugin - Available Commands"
+	@echo ""
+	@echo "📦 BUILD COMMANDS:"
+	@grep -E '^(build|vendor|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🧪 TEST COMMANDS:"
+	@grep -E '^(test|test-unit|test-coverage|test-local|test-catalog|test-all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🔧 LOCAL MODE COMMANDS:"
+	@grep -E '^(local-build|local-test|local-clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🚀 CATALOG MODE COMMANDS:"
+	@grep -E '^(catalog-test|catalog-clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "📋 VERSION & RELEASE COMMANDS:"
+	@grep -E '^(version|version-patch|version-minor|version-major|release|release-dry-run):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🧹 CLEANUP COMMANDS:"
+	@grep -E '^(clean-vendor|clean-all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-test: ## Run tests
-	@echo "Running tests..."
-	go test ./src/... -v -race -coverprofile=coverage.out
-	@echo "Tests completed"
-
-test-coverage: ## Run tests with coverage report
-	@echo "Running tests with coverage..."
-	go test ./src/... -v -coverprofile=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
-
-build: ## Build the plugin for multiple platforms
+## Build Commands
+build: ## Build the plugin binary
 	@echo "Building plugin version $(VERSION)..."
-	@mkdir -p build
-	@platforms="linux/amd64 linux/arm64 darwin/amd64 darwin/arm64"; \
-	for platform in $$platforms; do \
-		os=$${platform%/*}; \
-		arch=$${platform#*/}; \
-		output_name="$(PLUGIN_NAME)-$(VERSION)-$$os-$$arch"; \
-		echo "Building for $$platform..."; \
-		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build \
-			-a -installsuffix cgo \
-			-ldflags "-X main.version=$(VERSION)" \
-			-o "build/$$output_name" \
-			./src/; \
-	done
-	@echo "Build completed"
-
-docker: ## Build Docker image
-	@echo "Building Docker image $(DOCKER_IMAGE):$(VERSION)..."
-	docker build -t "$(DOCKER_IMAGE):$(VERSION)" -t "$(DOCKER_IMAGE):latest" .
-	@echo "Docker build completed"
-
-docker-test: ## Run Docker tests with Traefik and plugin
-	@echo "Running Docker tests..."
-	@if [ -f "docker/run-tests.sh" ]; then \
-		chmod +x docker/run-tests.sh; \
-		./docker/run-tests.sh; \
-	else \
-		echo "Docker test script not found. Running basic Docker Compose test..."; \
-		docker compose up -d; \
-		sleep 10; \
-		docker compose logs traefik; \
-		docker compose down; \
-	fi
-	@echo "Docker tests completed"
-
-docker-clean: ## Clean Docker containers and images
-	@echo "Cleaning Docker containers and images..."
-	docker compose down -v --remove-orphans
-	docker rmi "$(DOCKER_IMAGE):$(VERSION)" "$(DOCKER_IMAGE):latest" 2>/dev/null || true
-	@echo "Docker cleanup completed"
-
-docker-push: ## Push Docker image to registry
-	@echo "Pushing Docker image..."
-	docker push "$(DOCKER_IMAGE):$(VERSION)"
-	docker push "$(DOCKER_IMAGE):latest"
-	@echo "Docker push completed"
-
-release: ## Create release artifacts
-	@echo "Creating release artifacts for version $(VERSION)..."
-	@mkdir -p "release/$(VERSION)"
-	@if [ -d "build" ]; then \
-		cp build/* "release/$(VERSION)/"; \
-		cd "release/$(VERSION)"; \
-		for file in *; do \
-			if [ -f "$$file" ]; then \
-				sha256sum "$$file" > "$$file.sha256"; \
-			fi; \
-		done; \
-		echo "Release artifacts created in release/$(VERSION)/"; \
-	else \
-		echo "No build artifacts found. Run 'make build' first."; \
-		exit 1; \
-	fi
+	go build -o $(PLUGIN_NAME)-$(VERSION)
 
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
-	@rm -rf build/
-	@rm -rf release/
-	@rm -f coverage.out coverage.html
-	@echo "Clean completed"
+	rm -f $(PLUGIN_NAME)-*
+	rm -f coverage.out coverage.html
 
-deps: ## Download dependencies
-	@echo "Downloading dependencies..."
-	go mod download
-	@echo "Dependencies downloaded"
+vendor: ## Create vendor directory (required for plugin catalog)
+	@echo "Creating vendor directory..."
+	go mod tidy
+	go mod vendor
+	@echo "Vendor directory created"
 
-fmt: ## Format code
-	@echo "Formatting code..."
-	go fmt ./src/...
-	@echo "Code formatting completed"
+clean-vendor: ## Remove vendor directory
+	@echo "Removing vendor directory..."
+	rm -rf vendor/
+	@echo "Vendor directory removed"
 
-lint: ## Run linter
-	@echo "Running linter..."
-	golangci-lint run ./src/...
-	@echo "Linting completed"
+## Test Commands  
+test: test-unit ## Alias for test-unit (default test command)
 
-all: ## Run all steps: test, build, docker, release
-	@echo "Running all steps..."
-	@$(MAKE) test
-	@$(MAKE) build
-	@$(MAKE) docker
-	@$(MAKE) release
-	@echo "All steps completed successfully"
+test-unit: ## Run unit tests
+	@echo "Running unit tests..."
+	go test -v -race -coverprofile=coverage.out
+	@echo "Unit tests completed"
 
-increment-patch: ## Increment patch version
+test-coverage: ## Run unit tests with coverage report
+	@echo "Running unit tests with coverage..."
+	go test -v -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+test-local: local-test ## Alias for local-test
+
+test-catalog: catalog-test ## Alias for catalog-test
+
+test-all: ## Run all tests (unit + local mode + catalog mode if available)
+	@echo "🧪 Running all tests..."
+	@echo ""
+	@echo "1️⃣ Running unit tests..."
+	@make test-unit
+	@echo ""
+	@echo "2️⃣ Running local mode tests..."
+	@make local-test
+	@echo ""
+	@echo "3️⃣ Running plugin catalog tests (if plugin is published)..."
+	@if make catalog-test 2>/dev/null; then \
+		echo "✅ Plugin catalog tests passed"; \
+	else \
+		echo "⚠️  Plugin catalog tests skipped (plugin may not be published yet)"; \
+	fi
+	@echo ""
+	@echo "🎉 All available tests completed!"
+
+## Local Mode Commands (Development Testing)
+local-build: ## Build Docker image for local mode tests  
+	@echo "Building Docker image for local mode tests..."
+	cd tests/local-mode && docker compose build
+
+local-test: ## Run local mode Docker tests (development)
+	@echo "Running local mode Docker tests..."
+	@if [ -f "tests/local-mode/run-tests.sh" ]; then \
+		cd tests/local-mode && ./run-tests.sh; \
+	else \
+		echo "Local mode test script not found. Running basic Docker Compose test..."; \
+		cd tests/local-mode && docker compose up -d; \
+		sleep 10; \
+		docker exec cors-plugin-tester sh /tests/test.sh; \
+		cd tests/local-mode && docker compose down; \
+	fi
+
+local-clean: ## Clean local mode Docker containers and images
+	@echo "Cleaning local mode Docker containers and images..."
+	cd tests/local-mode && docker compose down -v --remove-orphans
+
+## Catalog Mode Commands (Production Testing)
+catalog-test: ## Test plugin in catalog mode (requires published version)
+	@echo "Testing plugin in catalog mode..."
+	cd tests/plugin-catalog-test && docker compose down -v --remove-orphans || true
+	cd tests/plugin-catalog-test && docker compose up --abort-on-container-exit --exit-code-from tester
+	cd tests/plugin-catalog-test && docker compose down -v --remove-orphans
+
+catalog-clean: ## Clean plugin catalog test environment
+	@echo "Cleaning plugin catalog test environment..."
+	cd tests/plugin-catalog-test && docker compose down -v --remove-orphans
+
+## Cleanup Commands
+clean-all: ## Clean all test environments and build artifacts
+	@echo "Cleaning all test environments and build artifacts..."
+	@make clean
+	@make local-clean
+	@make catalog-clean
+	@echo "✅ All environments cleaned"
+
+## Version & Release Commands
+version: ## Show current version
+	@echo "Current version: $(VERSION)"
+
+version-patch: ## Increment patch version
 	@echo "Incrementing patch version..."
-	@./scripts/build.sh increment patch
+	@bash -c 'current=$$(cat VERSION 2>/dev/null || echo "0.1.0"); IFS="." read -r major minor patch <<< "$$current"; new_patch=$$((patch + 1)); new_version="$$major.$$minor.$$new_patch"; echo "$$new_version" > VERSION; echo "Version updated to: $$new_version"'
 
-increment-minor: ## Increment minor version
+version-minor: ## Increment minor version
 	@echo "Incrementing minor version..."
-	@./scripts/build.sh increment minor
+	@bash -c 'current=$$(cat VERSION 2>/dev/null || echo "0.1.0"); IFS="." read -r major minor patch <<< "$$current"; new_minor=$$((minor + 1)); new_version="$$major.$$new_minor.0"; echo "$$new_version" > VERSION; echo "Version updated to: $$new_version"'
 
-increment-major: ## Increment major version
+version-major: ## Increment major version
 	@echo "Incrementing major version..."
-	@./scripts/build.sh increment major
+	@bash -c 'current=$$(cat VERSION 2>/dev/null || echo "0.1.0"); IFS="." read -r major minor patch <<< "$$current"; new_major=$$((major + 1)); new_version="$$new_major.0.0"; echo "$$new_version" > VERSION; echo "Version updated to: $$new_version"'
 
-dev: ## Development setup
-	@echo "Setting up development environment..."
-	@$(MAKE) deps
-	@$(MAKE) fmt
-	@$(MAKE) test
-	@echo "Development setup completed"
+release: ## Create a new release (interactive)
+	@echo "Starting release process..."
+	@./scripts/release.sh
 
-install-tools: ## Install development tools
-	@echo "Installing development tools..."
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	@echo "Development tools installed"
+release-dry-run: ## Simulate release process without creating tags
+	@echo "Simulating release process..."
+	@echo "Current version: $(VERSION)"
+	@echo "Tests would be run..."
+	@echo "Dependencies would be verified..."
+	@echo "Tag would be created and pushed..."
+	@echo "Use 'make release' to actually create a release"

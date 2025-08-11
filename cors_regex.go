@@ -1,15 +1,16 @@
-package main
+// CORS regex plugin package.
+package traefik_plugin_cors_regex
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 )
 
-// Config holds the plugin configuration.
+// Config the plugin configuration.
 type Config struct {
 	AllowOriginList  []string `json:"allowOriginList,omitempty"`
 	AllowMethods     []string `json:"allowMethods,omitempty"`
@@ -17,6 +18,7 @@ type Config struct {
 	ExposeHeaders    []string `json:"exposeHeaders,omitempty"`
 	AllowCredentials bool     `json:"allowCredentials,omitempty"`
 	MaxAge           int      `json:"maxAge,omitempty"`
+	Debug            bool     `json:"debug,omitempty"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -28,10 +30,11 @@ func CreateConfig() *Config {
 		ExposeHeaders:    []string{},
 		AllowCredentials: false,
 		MaxAge:           86400,
+		Debug:            false,
 	}
 }
 
-// CORSRegex holds the necessary information to instantiate the CORS regex plugin.
+// CORSRegex a plugin.
 type CORSRegex struct {
 	next             http.Handler
 	name             string
@@ -40,15 +43,33 @@ type CORSRegex struct {
 	originalPatterns []string
 }
 
-// New creates and returns a new CORS regex plugin instance.
-func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
-	log.Printf("[CORS-REGEX] Initializing plugin '%s' with %d origin patterns", name, len(config.AllowOriginList))
+// Logging helper functions
+func (c *CORSRegex) logDebug(format string, args ...interface{}) {
+	if c.config.Debug {
+		msg := fmt.Sprintf("[CORS-REGEX-DEBUG] %s", fmt.Sprintf(format, args...))
+		os.Stdout.WriteString(msg + "\n")
+	}
+}
 
+func (c *CORSRegex) logInfo(format string, args ...interface{}) {
+	msg := fmt.Sprintf("[CORS-REGEX-INFO] %s", fmt.Sprintf(format, args...))
+	os.Stdout.WriteString(msg + "\n")
+}
+
+func (c *CORSRegex) logError(format string, args ...interface{}) {
+	msg := fmt.Sprintf("[CORS-REGEX-ERROR] %s", fmt.Sprintf(format, args...))
+	os.Stderr.WriteString(msg + "\n")
+}
+
+// New created a new plugin.
+func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	plugin := &CORSRegex{
 		next:   next,
 		name:   name,
 		config: config,
 	}
+
+	plugin.logDebug("Initializing plugin name=%s allowOrigins=%d", name, len(config.AllowOriginList))
 
 	// Compile regex patterns and store original patterns
 	for _, origin := range config.AllowOriginList {
@@ -59,50 +80,45 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 			regexPattern = strings.ReplaceAll(origin, ".", "\\.")
 			regexPattern = strings.ReplaceAll(regexPattern, "*", ".*")
 			regexPattern = "^" + regexPattern + "$"
-			log.Printf("[CORS-REGEX] Converting wildcard pattern '%s' to regex: '%s'", origin, regexPattern)
+			plugin.logDebug("Origin pattern converted wildcard origin=%q regex=%q", origin, regexPattern)
 		} else {
 			// Check if the pattern contains regex special characters
-			// If it does, treat it as a regex pattern; otherwise, treat as exact match
 			if strings.ContainsAny(origin, "[]{}()*+?|\\^$") {
-				// Treat as regex pattern
 				regexPattern = "^" + origin + "$"
-				log.Printf("[CORS-REGEX] Treating pattern '%s' as regex: '%s'", origin, regexPattern)
+				plugin.logDebug("Origin pattern treated as regex origin=%q regex=%q", origin, regexPattern)
 			} else {
-				// Treat as exact match
 				regexPattern = "^" + regexp.QuoteMeta(origin) + "$"
-				log.Printf("[CORS-REGEX] Treating pattern '%s' as exact match: '%s'", origin, regexPattern)
+				plugin.logDebug("Origin pattern exact match origin=%q regex=%q", origin, regexPattern)
 			}
 		}
 
 		compiled, err := regexp.Compile(regexPattern)
 		if err != nil {
-			log.Printf("[CORS-REGEX] ERROR: Failed to compile pattern '%s': %v", origin, err)
+			plugin.logError("Failed to compile pattern origin=%q err=%v", origin, err)
 			return nil, fmt.Errorf("invalid pattern %s: %w", origin, err)
 		}
 
 		plugin.originPatterns = append(plugin.originPatterns, compiled)
 		plugin.originalPatterns = append(plugin.originalPatterns, origin)
-		log.Printf("[CORS-REGEX] Successfully compiled pattern '%s'", origin)
 	}
 
-	log.Printf("[CORS-REGEX] Plugin '%s' initialized successfully with %d patterns", name, len(plugin.originPatterns))
+	plugin.logInfo("Plugin initialized successfully name=%s compiled=%d", name, len(plugin.originPatterns))
 	return plugin, nil
 }
 
-// ServeHTTP handles the HTTP request and adds CORS headers.
 func (c *CORSRegex) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	origin := req.Header.Get("Origin")
 
-	log.Printf("[CORS-REGEX] Processing request from origin: '%s' for path: '%s'", origin, req.URL.Path)
+	c.logDebug("Processing request method=%s path=%s origin=%q", req.Method, req.URL.Path, origin)
 
 	// Check if origin is allowed
 	allowedOrigin := c.isOriginAllowed(origin)
 
 	if allowedOrigin != "" {
-		log.Printf("[CORS-REGEX] Origin '%s' is allowed (matched pattern: '%s')", origin, allowedOrigin)
 		rw.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		c.logDebug("Origin allowed matchedPattern=%q", allowedOrigin)
 	} else if origin != "" {
-		log.Printf("[CORS-REGEX] Origin '%s' is NOT allowed", origin)
+		c.logDebug("Origin blocked origin=%q", origin)
 	}
 
 	if len(c.config.AllowMethods) > 0 {
@@ -127,7 +143,7 @@ func (c *CORSRegex) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// Handle preflight requests
 	if req.Method == "OPTIONS" {
-		log.Printf("[CORS-REGEX] Handling preflight request for origin: '%s'", origin)
+		c.logDebug("Handling preflight request origin=%q", origin)
 		rw.WriteHeader(http.StatusOK)
 		return
 	}
@@ -141,20 +157,28 @@ func (c *CORSRegex) isOriginAllowed(origin string) string {
 		return ""
 	}
 
-	// Check against regex patterns
 	for i, pattern := range c.originPatterns {
 		if pattern.MatchString(origin) {
-			// Return the original pattern that was configured
-			return c.originalPatterns[i]
+			originalPattern := c.originalPatterns[i]
+
+			// For wildcard patterns (containing *) and regex patterns, return the actual origin
+			// For exact matches, return the pattern (which should be the same as origin)
+			if strings.Contains(originalPattern, "*") || strings.ContainsAny(originalPattern, "[]{}()+?|\\^$") {
+				c.logDebug("Wildcard/regex pattern matched, returning actual origin pattern=%q origin=%q", originalPattern, origin)
+				return origin
+			}
+
+			// For exact matches, return the original pattern
+			c.logDebug("Exact pattern matched pattern=%q", originalPattern)
+			return originalPattern
 		}
 	}
 
 	return ""
 }
 
-// main function required for Traefik plugin
-func main() {
-	// This function is required for the plugin to be recognized by Traefik
-	// The actual plugin registration is handled by Traefik's plugin system
-	log.Printf("[CORS-REGEX] Plugin loaded successfully")
+// Export map used by Traefik/Yaegi in some setups.
+var traefik_plugin_cors_regex = map[string]interface{}{
+	"New":          New,
+	"CreateConfig": CreateConfig,
 }

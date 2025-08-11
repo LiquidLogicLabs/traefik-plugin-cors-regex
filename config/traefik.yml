@@ -1,0 +1,27 @@
+# Traefik configuration for testing the CORS regex plugin in local mode
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  dashboard:
+    address: ":9000"
+
+providers:
+  file:
+    directory: /etc/traefik/conf
+    watch: true
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+
+experimental:
+  localPlugins:
+    cors-regex:
+      moduleName: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+
+log:
+  level: DEBUG
+accessLog: {}

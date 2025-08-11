@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Test application backend
+  test-app:
+    image: nginx:alpine
+    container_name: plugin-catalog-test-app
+    ports:
+      - "8991:80"
+    volumes:
+      - ../config/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.test-app.rule=Host(`localhost`) && PathPrefix(`/test`)"
+      - "traefik.http.routers.test-app.entrypoints=web"
+      - "traefik.http.services.test-app.loadbalancer.server.port=80"
+      # Attach CORS middleware
+      - "traefik.http.routers.test-app.middlewares=cors-regex"
+
+  # Traefik with plugin from catalog (not local mode)
+  traefik:
+    image: traefik:v3.5
+    container_name: traefik-plugin-catalog-test
+    depends_on:
+      - test-app
+    ports:
+      - "8989:80"     # web
+      - "8990:9000"   # dashboard
+    networks:
+      - traefik-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Static config for plugin catalog mode
+      - ./traefik-catalog.yml:/etc/traefik/traefik.yml:ro
+    command:
+      - "--api.insecure=true"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.dashboard.address=:9000"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # Plugin from catalog (not local mode)
+      - "--experimental.plugins.cors-regex.modulename=github.com/liquidlogiclabs/traefik-plugin-cors-regex"
+      - "--experimental.plugins.cors-regex.version=v0.1.1"
+    labels:
+      - "traefik.enable=true"
+      # Dashboard router
+      - "traefik.http.routers.traefik.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      # CORS middleware configuration
+      - "traefik.http.middlewares.cors-regex.plugin.cors-regex.alloworiginlist=https://example.com,https://*.example.com,https://api.example.org"
+      - "traefik.http.middlewares.cors-regex.plugin.cors-regex.allowmethods=GET,POST,PUT,DELETE,OPTIONS"
+      - "traefik.http.middlewares.cors-regex.plugin.cors-regex.allowheaders=Origin,Content-Type,Accept,Authorization"
+      - "traefik.http.middlewares.cors-regex.plugin.cors-regex.allowcredentials=true"
+      - "traefik.http.middlewares.cors-regex.plugin.cors-regex.maxage=86400"
+      - "traefik.http.middlewares.cors-regex.plugin.cors-regex.debug=true"
+
+  # Test runner for plugin catalog mode
+  tester:
+    image: alpine:3.20
+    container_name: plugin-catalog-tester
+    depends_on:
+      - traefik
+    networks:
+      - traefik-network
+    entrypoint: ["/bin/sh","-c"]
+    command: ["apk add --no-cache curl jq >/dev/null; sh /tests/plugin-catalog-test.sh"]
+    volumes:
+      - .:/tests:ro
+
+networks:
+  traefik-network:
+    driver: bridge

@@ -1,75 +1,36 @@
-# Traefik Plugin Manifest
-# This file is required for the plugin to be recognized by the Traefik Plugin Catalog
-
-# Plugin metadata
-name: cors-regex
+# The name of your plugin as displayed in the Plugins Catalog web UI.
 displayName: CORS Regex Plugin
-description: A Traefik plugin that adds support for regex and wildcard domains in the Access-Control-Allow-Origin header for CORS (Cross-Origin Resource Sharing).
-author: LiquidLogicLabs
-repository: https://github.com/liquidlogiclabs/traefik-plugin-cors-regex
-homepage: https://github.com/liquidlogiclabs/traefik-plugin-cors-regex
-license: MIT
-tags:
-  - cors
-  - middleware
-  - security
-  - regex
-  - wildcard
 
-# Plugin type
+# For now, `middleware` is the only type available.
 type: middleware
 
-# Test data for the plugin catalog
-testData:
-  config:
-    allowOriginList:
-      - "https://example.com"
-      - "https://*.example.com"
-      - "https://api.example.org"
-    allowMethods:
-      - "GET"
-      - "POST"
-      - "PUT"
-      - "DELETE"
-      - "OPTIONS"
-    allowHeaders:
-      - "Origin"
-      - "Content-Type"
-      - "Accept"
-      - "Authorization"
-    exposeHeaders:
-      - "X-Custom-Header"
-    allowCredentials: true
-    maxAge: 86400
+# The import path of your plugin.
+import: github.com/liquidlogiclabs/traefik-plugin-cors-regex
 
-# Plugin configuration schema
-schema:
-  type: object
-  properties:
-    allowOriginList:
-      type: array
-      items:
-        type: string
-      description: List of allowed origins (supports wildcards and regex)
-    allowMethods:
-      type: array
-      items:
-        type: string
-      description: Allowed HTTP methods
-    allowHeaders:
-      type: array
-      items:
-        type: string
-      description: Allowed request headers
-    exposeHeaders:
-      type: array
-      items:
-        type: string
-      description: Headers to expose to the client
-    allowCredentials:
-      type: boolean
-      description: Whether to allow credentials
-    maxAge:
-      type: integer
-      description: Maximum age for preflight requests (in seconds)
-  required: []
+# A brief description of what your plugin is doing.
+summary: A Traefik plugin that adds support for regex and wildcard domains in the Access-Control-Allow-Origin header for CORS (Cross-Origin Resource Sharing).
+
+# Configuration data for your plugin.
+# This is mandatory,
+# and Plugins Catalog will try to execute the plugin with the data you provide as part of its startup validity tests.
+testData:
+  allowOriginList:
+    - "https://example.com"
+    - "https://*.example.com"
+    - "https://api.example.org"
+  allowMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allowHeaders:
+    - "Origin"
+    - "Content-Type"
+    - "Accept"
+    - "Authorization"
+  exposeHeaders:
+    - "X-Custom-Header"
+  allowCredentials: true
+  maxAge: 86400
+  debug: false

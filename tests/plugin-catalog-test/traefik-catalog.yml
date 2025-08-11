@@ -1,39 +1,32 @@
-# Traefik configuration for testing the CORS regex plugin
+# Traefik configuration for Plugin Catalog mode testing
+# This tests the plugin as it would be used in production with standard Traefik
+
 global:
   checkNewVersion: false
   sendAnonymousUsage: false
 
-# API and dashboard
+log:
+  level: DEBUG
+
 api:
   dashboard: true
   insecure: true
 
-# Entry points
 entryPoints:
   web:
     address: ":80"
   dashboard:
     address: ":9000"
 
-# Providers
 providers:
-  file:
-    directory: /etc/traefik/conf
-    watch: true
   docker:
     endpoint: "unix:///var/run/docker.sock"
+    watch: true
     exposedByDefault: false
 
-# Experimental features (required for plugins)
+# Plugin from catalog (NOT local mode)
 experimental:
   plugins:
     cors-regex:
       modulename: github.com/liquidlogiclabs/traefik-plugin-cors-regex
-      version: v0.1.0
-
-# Logging
-log:
-  level: INFO
-
-# Access logs
-accessLog: {}
+      version: v0.1.1  # Use the released version
