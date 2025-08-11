@@ -93,15 +93,7 @@ local-build: ## Build Docker image for local mode tests
 
 local-test: ## Run local mode Docker tests (development)
 	@echo "Running local mode Docker tests..."
-	@if [ -f "tests/local-mode/run-tests.sh" ]; then \
-		cd tests/local-mode && ./run-tests.sh; \
-	else \
-		echo "Local mode test script not found. Running basic Docker Compose test..."; \
-		cd tests/local-mode && docker compose up -d; \
-		sleep 10; \
-		docker exec cors-plugin-tester sh /tests/test.sh; \
-		cd tests/local-mode && docker compose down; \
-	fi
+	@cd tests/local-mode && docker compose up --abort-on-container-exit --exit-code-from tester
 
 local-clean: ## Clean local mode Docker containers and images
 	@echo "Cleaning local mode Docker containers and images..."
