@@ -23,6 +23,9 @@ help: ## Show this help message
 	@echo "🚀 CATALOG MODE COMMANDS:"
 	@grep -E '^(catalog-test|catalog-clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
+	@echo "🎬 LOCAL GITHUB ACTIONS TESTING:"
+	@grep -E '^(act-list|act-release|act-ci|act-setup):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
 	@echo "📋 VERSION & RELEASE COMMANDS:"
 	@grep -E '^(version|version-patch|version-minor|version-major|release|release-dry-run):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
@@ -117,6 +120,26 @@ clean-all: ## Clean all test environments and build artifacts
 	@make local-clean
 	@make catalog-clean
 	@echo "✅ All environments cleaned"
+
+## Local GitHub Actions Testing
+act-list: ## List available GitHub Actions workflows
+	@echo "Available GitHub Actions workflows:"
+	@act --list
+
+act-release: ## Test release workflow locally with act
+	@echo "Testing release workflow locally..."
+	@echo "Note: This will simulate a tag push event"
+	@act push -e .github/events/tag-push.json
+
+act-ci: ## Test CI workflow locally with act
+	@echo "Testing CI workflow locally..."
+	@act push
+
+act-setup: ## Setup act test events
+	@echo "Setting up act test events..."
+	@mkdir -p .github/events
+	@echo '{"ref": "refs/tags/v$(VERSION)", "repository": {"default_branch": "main"}}' > .github/events/tag-push.json
+	@echo "Act setup complete. Use 'make act-list' to see available workflows"
 
 ## Version & Release Commands
 version: ## Show current version

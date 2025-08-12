@@ -43,7 +43,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       # Plugin from catalog (not local mode)
       - "--experimental.plugins.cors-regex.modulename=github.com/liquidlogiclabs/traefik-plugin-cors-regex"
-      - "--experimental.plugins.cors-regex.version=v0.1.2"
+      - "--experimental.plugins.cors-regex.version=v0.1.3"
     labels:
       - "traefik.enable=true"
       # Dashboard router
