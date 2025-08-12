@@ -8,6 +8,8 @@ global:
 log:
   level: DEBUG
 
+accessLog: {}
+
 api:
   dashboard: true
   insecure: true
@@ -19,14 +21,16 @@ entryPoints:
     address: ":9000"
 
 providers:
+  file:
+    directory: /etc/traefik/conf
+    watch: true
   docker:
     endpoint: "unix:///var/run/docker.sock"
     watch: true
     exposedByDefault: false
 
-# Plugin from catalog (NOT local mode)
+# Plugin from catalog (local mode)
 experimental:
-  plugins:
+  localPlugins:
     cors-regex:
-      modulename: github.com/liquidlogiclabs/traefik-plugin-cors-regex
-      version: v0.1.1  # Use the released version
+      moduleName: github.com/liquidlogiclabs/traefik-plugin-cors-regex

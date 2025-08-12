@@ -1,0 +1,17 @@
+# Dynamic configuration for Traefik
+# This file is watched and can be modified without restarting Traefik
+
+http:
+  # Additional middleware configurations can be added here
+  # The main plugin configuration is handled via Docker labels in docker-compose.yml
+  
+  # Example of additional configuration if needed
+  # middlewares:
+  #   cors-regex-additional:
+  #     plugin:
+  #       cors-regex:
+  #         allowOriginList:
+  #           - "https://additional.example.com"
+  #         allowMethods:
+  #           - "GET"
+  #           - "POST"

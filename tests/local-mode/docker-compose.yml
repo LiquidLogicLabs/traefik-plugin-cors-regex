@@ -6,7 +6,7 @@ services:
     ports:
       - "8991:80"
     volumes:
-      - ../../config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - traefik-network
     labels:
@@ -19,7 +19,7 @@ services:
 
   # Traefik in local plugin mode
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.5
     container_name: traefik-with-cors-plugin
     depends_on:
       - test-app
@@ -30,11 +30,11 @@ services:
       - traefik-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Static and dynamic config
+      - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/dynamic.yml:/etc/traefik/conf/dynamic.yml:ro
       # Mount plugin source at local mode path (project root)
       - ../../:/plugins-local/src/github.com/liquidlogiclabs/traefik-plugin-cors-regex:ro
-      # Static and dynamic config
-      - ../../config/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ../../config/dynamic.yml:/etc/traefik/conf/dynamic.yml:ro
     command:
       - "--api.insecure=true"
       - "--entryPoints.web.address=:80"
