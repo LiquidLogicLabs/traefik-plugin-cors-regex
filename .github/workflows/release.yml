@@ -33,13 +33,17 @@ jobs:
         run: |
           go test -v ./...
 
-      - name: Vendor dependencies
+      - name: Verify no external dependencies
         run: |
+          echo "Checking for external dependencies..."
           go mod vendor
-          
-      - name: Create vendor archive
-        run: |
-          tar -czf vendor.tar.gz vendor/
+          if [ -d "vendor" ] && [ "$(ls -A vendor 2>/dev/null)" ]; then
+            echo "📦 External dependencies found, creating vendor archive..."
+            tar -czf vendor.tar.gz vendor/
+          else
+            echo "✅ No external dependencies - plugin uses only Go standard library"
+            echo "SKIP_VENDOR=true" >> $GITHUB_ENV
+          fi
 
       - name: Build plugin
         run: |
@@ -102,7 +106,6 @@ jobs:
           body_path: release_notes.md
           files: |
             traefik-plugin-cors-regex
-            vendor.tar.gz
             VERSION
           draft: false
           prerelease: false
