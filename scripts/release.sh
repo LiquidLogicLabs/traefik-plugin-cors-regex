@@ -141,7 +141,13 @@ go mod vendor
 
 # Commit version changes
 echo_info "Committing version update..."
-git add VERSION go.mod go.sum vendor/
+git add VERSION go.mod
+if [ -f "go.sum" ]; then
+    git add go.sum
+fi
+if [ -d "vendor" ]; then
+    git add vendor/
+fi
 git commit -m "chore: bump version to v${NEW_VERSION}"
 
 # Create and push tag
