@@ -177,7 +177,7 @@ git push origin "$TAG"
 
 echo_success "Release $TAG created and pushed!"
 echo_info "GitHub Actions will automatically create the release"
-echo_info "Monitor the release at: https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/releases"
+echo_info "Monitor the release at: https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/releases"
 
 # Cleanup vendor directory (optional, keep for development)
 read -p "Remove vendor directory from working tree? (y/N): " -n 1 -r
@@ -192,7 +192,7 @@ fi
 echo ""
 echo_success "Release process completed!"
 echo_info "Next steps:"
-echo "  1. Monitor GitHub Actions: https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/actions"
-echo "  2. Check release: https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/releases"
+echo "  1. Monitor GitHub Actions: https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/actions"
+echo "  2. Check release: https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/releases"
 echo "  3. Plugin will be discoverable by Traefik Plugin Catalog automatically"
 echo "  4. Monitor inclusion at: https://plugins.traefik.io/"

@@ -240,7 +240,7 @@ jobs:
         cat > release_notes.md << 'EOF'
         ## Changes
         
-        See [CHANGELOG.md](https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/blob/main/CHANGELOG.md) for detailed changes.
+        See [CHANGELOG.md](https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/blob/main/CHANGELOG.md) for detailed changes.
         
         ## Installation
         
@@ -250,7 +250,7 @@ jobs:
         experimental:
           plugins:
             cors-regex:
-              modulename: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+              modulename: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
               version: ${{ steps.version.outputs.VERSION }}
         ```
         

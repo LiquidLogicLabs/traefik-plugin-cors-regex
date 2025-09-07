@@ -209,7 +209,7 @@ GitHub Release Created 🎉
 ## Monitoring and Debugging
 
 ### GitHub Actions UI
-- Navigate to: `https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/actions`
+- Navigate to: `https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/actions`
 - View workflow runs, logs, and artifacts
 - Monitor job dependencies and timing
 

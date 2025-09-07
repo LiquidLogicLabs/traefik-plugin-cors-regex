@@ -23,7 +23,7 @@ The plugin will be available in the official Traefik Plugin Catalog. Add it to y
 experimental:
   plugins:
     cors-regex:
-      modulename: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+      modulename: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
       version: v0.1.1
 ```
 
@@ -134,8 +134,8 @@ For development setup, testing, and contribution guidelines, see [README.dev.md]
 ## Support
 
 - **Documentation**: See [README.dev.md](README.dev.md) for development and troubleshooting
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/issues)
-- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/liquidlogiclabs/traefik-plugin-cors-regex/discussions)
+- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex/discussions)
 
 ## License
 

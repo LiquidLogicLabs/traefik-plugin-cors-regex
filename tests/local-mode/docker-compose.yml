@@ -34,7 +34,7 @@ services:
       - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./config/dynamic.yml:/etc/traefik/conf/dynamic.yml:ro
       # Mount plugin source at local mode path (project root)
-      - ../../:/plugins-local/src/github.com/liquidlogiclabs/traefik-plugin-cors-regex:ro
+      - ../../:/plugins-local/src/github.com/LiquidLogicLabs/traefik-plugin-cors-regex:ro
     command:
       - "--api.insecure=true"
       - "--entryPoints.web.address=:80"
@@ -44,7 +44,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       # Local plugin wiring (also present in traefik.yml for clarity)
-      - "--experimental.localPlugins.cors-regex.moduleName=github.com/liquidlogiclabs/traefik-plugin-cors-regex"
+      - "--experimental.localPlugins.cors-regex.moduleName=github.com/LiquidLogicLabs/traefik-plugin-cors-regex"
     labels:
       - "traefik.enable=true"
       # Dashboard router

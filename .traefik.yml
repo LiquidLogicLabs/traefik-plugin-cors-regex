@@ -5,7 +5,7 @@ displayName: CORS Regex Plugin
 type: middleware
 
 # The import path of your plugin.
-import: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+import: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
 
 # A brief description of what your plugin is doing.
 summary: A Traefik plugin that adds support for regex and wildcard domains in the Access-Control-Allow-Origin header for CORS (Cross-Origin Resource Sharing).

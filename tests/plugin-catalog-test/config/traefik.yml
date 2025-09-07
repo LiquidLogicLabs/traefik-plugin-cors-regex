@@ -33,5 +33,5 @@ providers:
 experimental:
   plugins:
     cors-regex:
-      moduleName: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+      moduleName: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
       version: v0.1.2  # Use the released version

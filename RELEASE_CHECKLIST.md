@@ -84,7 +84,7 @@ make catalog-test
    experimental:
      plugins:
        cors-regex:
-         modulename: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+         modulename: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
          version: v0.1.1  # Use your release version
    ```
 3. Test CORS functionality

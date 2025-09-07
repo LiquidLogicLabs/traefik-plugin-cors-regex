@@ -33,4 +33,4 @@ providers:
 experimental:
   localPlugins:
     cors-regex:
-      moduleName: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+      moduleName: github.com/LiquidLogicLabs/traefik-plugin-cors-regex

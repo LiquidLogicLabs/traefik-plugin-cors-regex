@@ -14,7 +14,7 @@ This document provides information for developers working on the Traefik CORS Re
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/liquidlogiclabs/traefik-plugin-cors-regex.git
+git clone https://github.com/LiquidLogicLabs/traefik-plugin-cors-regex.git
 cd traefik-plugin-cors-regex
 ```
 
@@ -317,7 +317,7 @@ For manual testing, the plugin can be configured in Traefik's static configurati
 experimental:
   localPlugins:
     cors-regex:
-      moduleName: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+      moduleName: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
 ```
 
 ## Contributing

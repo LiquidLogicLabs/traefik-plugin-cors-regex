@@ -91,7 +91,7 @@ The test uses the following key configurations:
 experimental:
   localPlugins:
     cors-regex:
-      moduleName: github.com/liquidlogiclabs/traefik-plugin-cors-regex
+      moduleName: github.com/LiquidLogicLabs/traefik-plugin-cors-regex
 ```
 
 ### Plugin Configuration (Docker labels)
