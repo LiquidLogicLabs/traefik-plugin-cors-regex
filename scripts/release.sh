@@ -60,8 +60,9 @@ echo "1) Patch (${CURRENT_VERSION} -> patch increment)"
 echo "2) Minor (${CURRENT_VERSION} -> minor increment)"  
 echo "3) Major (${CURRENT_VERSION} -> major increment)"
 echo "4) Custom version"
+echo "5) Keep current version (${CURRENT_VERSION})"
 
-read -p "Enter choice (1-4): " -n 1 -r
+read -p "Enter choice (1-5): " -n 1 -r
 echo
 
 case $REPLY in
@@ -80,6 +81,10 @@ case $REPLY in
     4)
         read -p "Enter custom version (without 'v' prefix): " CUSTOM_VERSION
         echo "$CUSTOM_VERSION" > VERSION
+        ;;
+    5)
+        echo_info "Keeping current version: $CURRENT_VERSION"
+        # No version change needed
         ;;
     *)
         echo_error "Invalid choice"
@@ -148,7 +153,17 @@ fi
 if [ -d "vendor" ]; then
     git add vendor/
 fi
-git commit -m "chore: bump version to v${NEW_VERSION}"
+
+# Check if there are any changes to commit
+if git diff --cached --quiet; then
+    echo_info "No version changes to commit"
+else
+    if [ "$NEW_VERSION" = "$CURRENT_VERSION" ]; then
+        git commit -m "chore: prepare release v${NEW_VERSION}"
+    else
+        git commit -m "chore: bump version to v${NEW_VERSION}"
+    fi
+fi
 
 # Create and push tag
 TAG="v${NEW_VERSION}"

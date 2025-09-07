@@ -1,7 +1,7 @@
 .PHONY: help build clean vendor clean-vendor
 .PHONY: test test-unit test-coverage test-local test-catalog test-all 
 .PHONY: local-build local-test local-clean catalog-test catalog-clean setup-repo check-repo-status clean-all
-.PHONY: version version-patch version-minor version-major release release-dry-run
+.PHONY: version version-patch version-minor version-major release release-current release-dry-run
 
 # Variables
 PLUGIN_NAME := cors-regex
@@ -30,7 +30,7 @@ help: ## Show this help message
 	@grep -E '^(act-list|act-release|act-ci|act-setup):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "📋 VERSION & RELEASE COMMANDS:"
-	@grep -E '^(version|version-patch|version-minor|version-major|release|release-dry-run):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^(version|version-patch|version-minor|version-major|release|release-current|release-dry-run):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🧹 CLEANUP COMMANDS:"
 	@grep -E '^(clean-vendor|clean-all):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -239,6 +239,20 @@ auto-release-major: ## Automatically increment major version and trigger release
 	@git push origin main
 	@git push origin "v$$(cat VERSION)"
 	@echo "✅ Released v$$(cat VERSION) - GitHub Actions will create the release"
+
+release-current: ## Create a release with current version (no version increment)
+	@echo "Releasing current version..."
+	@$(MAKE) test-unit
+	@echo "✅ Tests passed"
+	@go mod tidy
+	@go mod verify
+	@go mod vendor
+	@git add go.mod go.sum vendor/
+	@git commit -m "chore: prepare release v$$(cat VERSION)" || echo "No changes to commit"
+	@git tag "v$$(cat VERSION)"
+	@git push origin main
+	@git push origin "v$$(cat VERSION)"
+	@echo "✅ Released v$$(cat VERSION) with current version - GitHub Actions will create the release"
 
 release-dry-run: ## Simulate release process without creating tags
 	@echo "Simulating release process..."
