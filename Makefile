@@ -1,6 +1,6 @@
 .PHONY: help build clean vendor clean-vendor
 .PHONY: test test-unit test-coverage test-local test-catalog test-all 
-.PHONY: local-build local-test local-clean catalog-test catalog-clean clean-all
+.PHONY: local-build local-test local-clean catalog-test catalog-clean setup-repo check-repo-status clean-all
 .PHONY: version version-patch version-minor version-major release release-dry-run
 
 # Variables
@@ -22,6 +22,9 @@ help: ## Show this help message
 	@echo ""
 	@echo "🚀 CATALOG MODE COMMANDS:"
 	@grep -E '^(catalog-test|catalog-clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "\033[33mSetup Commands:\033[0m"
+	@grep -E '^(setup-repo|check-repo-status):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🎬 LOCAL GITHUB ACTIONS TESTING:"
 	@grep -E '^(act-list|act-release|act-ci|act-setup):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -105,13 +108,59 @@ local-clean: ## Clean local mode Docker containers and images
 ## Catalog Mode Commands (Production Testing)
 catalog-test: ## Test plugin in catalog mode (requires published version)
 	@echo "Testing plugin in catalog mode..."
+	@echo "Updating test configuration to use current version v$(VERSION)..."
+	@cd tests/plugin-catalog-test && \
+		sed -i.bak 's/version=v[0-9]\+\.[0-9]\+\.[0-9]\+/version=v$(VERSION)/g' docker-compose.yml && \
+		sed -i.bak 's/version: v[0-9]\+\.[0-9]\+\.[0-9]\+/version: v$(VERSION)/g' config/traefik.yml
+	@echo "✅ Configuration updated to use version v$(VERSION)"
 	cd tests/plugin-catalog-test && docker compose down -v --remove-orphans || true
+	@echo "Starting catalog mode test with version v$(VERSION)..."
 	cd tests/plugin-catalog-test && docker compose up --abort-on-container-exit --exit-code-from tester
+	@echo "Cleaning up test environment..."
 	cd tests/plugin-catalog-test && docker compose down -v --remove-orphans
+	@echo "Restoring original configuration files..."
+	@cd tests/plugin-catalog-test && \
+		mv docker-compose.yml.bak docker-compose.yml 2>/dev/null || true && \
+		mv config/traefik.yml.bak config/traefik.yml 2>/dev/null || true
 
 catalog-clean: ## Clean plugin catalog test environment
 	@echo "Cleaning plugin catalog test environment..."
 	cd tests/plugin-catalog-test && docker compose down -v --remove-orphans
+
+## Setup Commands
+setup-repo: ## Setup repository for Traefik Plugin Catalog (adds required topic)
+	@echo "Setting up repository for Traefik Plugin Catalog..."
+	@echo "Adding 'traefik-plugin' topic to repository..."
+	@gh repo edit --add-topic traefik-plugin
+	@echo "✅ Repository topic 'traefik-plugin' added"
+	@echo "📋 Verifying Plugin Catalog requirements:"
+	@echo "   ✅ Repository topic 'traefik-plugin' is set"
+	@if [ -f ".traefik.yml" ]; then echo "   ✅ .traefik.yml manifest exists"; else echo "   ❌ .traefik.yml manifest missing"; fi
+	@if [ -f "go.mod" ]; then echo "   ✅ go.mod file exists"; else echo "   ❌ go.mod file missing"; fi
+	@echo "📖 Next steps:"
+	@echo "   1. Create a release: make auto-release-patch"
+	@echo "   2. Wait ~30 minutes for Plugin Catalog discovery"
+	@echo "   3. Check https://plugins.traefik.io/ for your plugin"
+
+check-repo-status: ## Check repository Plugin Catalog readiness
+	@echo "Checking repository Plugin Catalog readiness..."
+	@echo "Repository: $$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+	@echo "Topics: $$(gh repo view --json repositoryTopics -q '.repositoryTopics[].name' | tr '\n' ' ')"
+	@if gh repo view --json repositoryTopics -q '.repositoryTopics[].name' | grep -q "traefik-plugin"; then \
+		echo "✅ 'traefik-plugin' topic is set"; \
+	else \
+		echo "❌ 'traefik-plugin' topic is missing - run 'make setup-repo'"; \
+	fi
+	@if gh repo view --json isPrivate -q .isPrivate | grep -q "false"; then \
+		echo "✅ Repository is public"; \
+	else \
+		echo "❌ Repository is private - must be public for Plugin Catalog"; \
+	fi
+	@if gh repo view --json isFork -q .isFork | grep -q "false"; then \
+		echo "✅ Repository is not a fork"; \
+	else \
+		echo "❌ Repository is a fork - Plugin Catalog requires original repositories"; \
+	fi
 
 ## Cleanup Commands
 clean-all: ## Clean all test environments and build artifacts
@@ -160,6 +209,36 @@ version-major: ## Increment major version
 release: ## Create a new release (interactive)
 	@echo "Starting release process..."
 	@./scripts/release.sh
+
+auto-release-patch: ## Automatically increment patch version and trigger release
+	@echo "Auto-releasing patch version..."
+	@$(MAKE) version-patch
+	@git add VERSION
+	@git commit -m "chore: bump version to v$$(cat VERSION)"
+	@git tag "v$$(cat VERSION)"
+	@git push origin main
+	@git push origin "v$$(cat VERSION)"
+	@echo "✅ Released v$$(cat VERSION) - GitHub Actions will create the release"
+
+auto-release-minor: ## Automatically increment minor version and trigger release
+	@echo "Auto-releasing minor version..."
+	@$(MAKE) version-minor
+	@git add VERSION
+	@git commit -m "chore: bump version to v$$(cat VERSION)"
+	@git tag "v$$(cat VERSION)"
+	@git push origin main
+	@git push origin "v$$(cat VERSION)"
+	@echo "✅ Released v$$(cat VERSION) - GitHub Actions will create the release"
+
+auto-release-major: ## Automatically increment major version and trigger release
+	@echo "Auto-releasing major version..."
+	@$(MAKE) version-major
+	@git add VERSION
+	@git commit -m "chore: bump version to v$$(cat VERSION)"
+	@git tag "v$$(cat VERSION)"
+	@git push origin main
+	@git push origin "v$$(cat VERSION)"
+	@echo "✅ Released v$$(cat VERSION) - GitHub Actions will create the release"
 
 release-dry-run: ## Simulate release process without creating tags
 	@echo "Simulating release process..."
